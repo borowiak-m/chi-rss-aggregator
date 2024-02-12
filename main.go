@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -9,20 +10,6 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 )
-
-func respondWithError(w http.ResponseWriter, code int, msg string) {
-	if code > 499 {
-		log.Println("Responding with 5XX error:", msg)
-	}
-
-	type errResponse struct {
-		Error string `json:"error"`
-	}
-
-	respondWithJSON(w, code, errResponse{
-		Error: msg,
-	})
-}
 
 func main() {
 
@@ -60,5 +47,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// db
+
+	db, err := sql.Open("mysql", os.Getenv("DSN"))
+	if err != nil {
+		log.Fatalf("failed to connect: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("failed to ping: %v", err)
+	}
+
+	log.Println("Successfully connected to PlanetScale!")
 
 }
