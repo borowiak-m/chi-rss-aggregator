@@ -6,10 +6,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/borowiak-m/rss-aggregator/internal/database"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
+
+type apiConfig struct {
+	DB *database.Queries
+}
 
 func main() {
 
@@ -18,6 +24,20 @@ func main() {
 	portString := os.Getenv("PORT")
 	if portString == "" {
 		log.Fatal("PORT is not found in the env")
+	}
+
+	postgresDbURL := os.Getenv("DB_POSTGRES_URL")
+	if postgresDbURL == "" {
+		log.Fatal("Postgres DB URL not found in the env")
+	}
+
+	conn, err := sql.Open("postgres", postgresDbURL)
+	if err != nil {
+		log.Fatal("Can't connect to db")
+	}
+
+	apiCfg := apiConfig{
+		DB: database.New(conn),
 	}
 
 	router := chi.NewRouter()
@@ -34,6 +54,7 @@ func main() {
 	v1Router := chi.NewRouter()
 	v1Router.Get("/healthz", handlerReadiness)
 	v1Router.Get("/err", handlerErr)
+	v1Router.Post("/users", apiCfg.handlerCreateUser)
 
 	router.Mount("/v1", v1Router)
 
@@ -43,23 +64,9 @@ func main() {
 	}
 
 	log.Printf("Server starting on port %v", portString)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// db
-
-	db, err := sql.Open("mysql", os.Getenv("DSN"))
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		log.Fatalf("failed to ping: %v", err)
-	}
-
-	log.Println("Successfully connected to PlanetScale!")
 
 }
