@@ -31,6 +31,8 @@ Data migrations are crucial for setting up your database schema before running t
 
 ### Migration Tool
 The project uses Goose for database migrations, a lightweight tool that helps manage your database schema. 
+Goose documentation can be found here: https://github.com/pressly/goose.
+
 Setting Up Migrations
 Install Goose can be installed by running: ```go get -u github.com/pressly/goose/cmd/goose```
 
